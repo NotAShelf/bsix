@@ -28,26 +28,25 @@ static const unsigned char base64_lookup[256] = {
 
 // encode
 char *base64_encode(const unsigned char *data, size_t len) {
-  size_t out_len = 4 * ((len + 2) / 3);
-  char *encoded = malloc(out_len + 1);
+  size_t out_len = 4 * ((len + 2) / 3); // rounding up for padding
+  char *encoded = malloc(out_len + 1);  // allocate memory
   if (!encoded)
-    return NULL;
+    return NULL; // check for allocation failure
 
-  size_t i, j;
-  for (i = 0, j = 0; i < len;) {
+  size_t i, j = 0;
+  for (i = 0; i < len;) {
     uint32_t octet_a = i < len ? data[i++] : 0;
     uint32_t octet_b = i < len ? data[i++] : 0;
     uint32_t octet_c = i < len ? data[i++] : 0;
-
     uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
 
     encoded[j++] = base64_chars[(triple >> 18) & 0x3F];
     encoded[j++] = base64_chars[(triple >> 12) & 0x3F];
-    encoded[j++] = i > len + 1 ? '=' : base64_chars[(triple >> 6) & 0x3F];
-    encoded[j++] = i > len ? '=' : base64_chars[triple & 0x3F];
+    encoded[j++] = (i > len) ? '=' : base64_chars[(triple >> 6) & 0x3F];
+    encoded[j++] = (i > len + 1) ? '=' : base64_chars[triple & 0x3F];
   }
 
-  encoded[out_len] = '\0';
+  encoded[out_len] = '\0'; // ensure null-termination
   return encoded;
 }
 
@@ -55,25 +54,27 @@ char *base64_encode(const unsigned char *data, size_t len) {
 unsigned char *base64_decode(const char *encoded, size_t *out_len) {
   size_t len = strlen(encoded);
   if (len % 4 != 0)
-    return NULL;
+    return NULL; // check if the input length is valid
 
   *out_len = len / 4 * 3;
   if (encoded[len - 1] == '=')
-    (*out_len)--;
+    (*out_len)--; // adjust output length for padding
   if (encoded[len - 2] == '=')
     (*out_len)--;
 
-  unsigned char *decoded = malloc(*out_len);
+  unsigned char *decoded =
+      malloc(*out_len); // allocate memory for the decoded data
   if (!decoded)
-    return NULL;
+    return NULL; // check for allocation failure
 
-  size_t i, j;
-  for (i = 0, j = 0; i < len;) {
+  size_t i, j = 0;
+  for (i = 0; i < len;) {
     uint32_t sextet_a = base64_lookup[(unsigned char)encoded[i++]];
     uint32_t sextet_b = base64_lookup[(unsigned char)encoded[i++]];
     uint32_t sextet_c = base64_lookup[(unsigned char)encoded[i++]];
     uint32_t sextet_d = base64_lookup[(unsigned char)encoded[i++]];
 
+    // check for invalid characters
     if ((sextet_a | sextet_b | sextet_c | sextet_d) == 0xFF) {
       free(decoded);
       return NULL;
