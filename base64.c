@@ -34,7 +34,7 @@ char *base64_encode(const unsigned char *data, size_t len) {
     return NULL;
 
   size_t i, j = 0;
-  char *base64_chars_ptr = base64_chars;
+  const char *base64_chars_ptr = base64_chars;
 
   for (i = 0; i < len;) {
     uint32_t octet_a = i < len ? data[i++] : 0;
