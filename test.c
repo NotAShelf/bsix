@@ -38,7 +38,7 @@ int main() {
   const char *test_cases[] = {
       "hello, world!", "", "special chars: !@#$%^&*()_+-=[]{}|;:'\",.<>?/`~",
       "a longer line that spans over two lines to test if the decoding "
-      "functionality works"
+      "functionality works "
       "properly",
       NULL // sentinel value
   };
