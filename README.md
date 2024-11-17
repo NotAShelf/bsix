@@ -43,3 +43,7 @@ int main() {
     return 0;
 }
 ```
+
+## License
+
+Available under the [MIT License](./LICENSE)
