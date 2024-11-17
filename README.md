@@ -8,6 +8,9 @@ suitable for embedding in small projects, or systems with limited resources.
 I need a microscopic Base64 encoding/decoding library to use on my embedded
 systems. This is that library, built with my own needs in mind.
 
+Cross-platform in theory, should work on embedded systems (in my case, Risc-V)
+pretty well. If it doesn't, open an issue.
+
 ## Benchmarks
 
 The speed of bsix depends mostly on your implementation. Below is the benchmark
