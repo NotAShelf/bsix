@@ -51,8 +51,11 @@ static int base64_decode_sextets(const char *encoded, size_t *i,
 
 // encode
 char *base64_encode(const unsigned char *data, size_t len) {
-  size_t out_len = 4 * ((len + 2) / 3);
-  char *encoded = malloc(out_len + 1);
+  if (!data)
+    return NULL;
+
+  size_t out_len = 4 * ((len + 2) / 3); // rounding up for padding
+  char *encoded = malloc(out_len + 1);  // allocate memory for encoded string
   if (!encoded)
     return NULL;
 
@@ -63,22 +66,23 @@ char *base64_encode(const unsigned char *data, size_t len) {
     uint32_t octet_c = i < len ? data[i++] : 0;
     uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
 
-    // encode the triplet
     base64_encode_triplet(triple, encoded, &j);
 
-    // adjust padding if necessary
     if (i > len)
       encoded[j - 1] = '=';
     if (i > len + 1)
       encoded[j - 2] = '=';
   }
 
-  encoded[out_len] = '\0'; // ensure null-termination
+  encoded[out_len] = '\0'; // null-terminate the string
   return encoded;
 }
 
 // decode
 unsigned char *base64_decode(const char *encoded, size_t *out_len) {
+  if (!encoded)
+    return NULL;
+
   size_t len = strlen(encoded);
   if (len % 4 != 0)
     return NULL;
@@ -89,7 +93,8 @@ unsigned char *base64_decode(const char *encoded, size_t *out_len) {
   if (encoded[len - 2] == '=')
     (*out_len)--;
 
-  unsigned char *decoded = malloc(*out_len);
+  unsigned char *decoded =
+      malloc(*out_len); // allocate memory for the decoded result
   if (!decoded)
     return NULL;
 
@@ -98,13 +103,14 @@ unsigned char *base64_decode(const char *encoded, size_t *out_len) {
   for (i = 0; i < len;) {
     if (base64_decode_sextets(encoded, &i, &sextet_a, &sextet_b, &sextet_c,
                               &sextet_d)) {
-      free(decoded);
-      return NULL; // invalid character encountered
+      free(decoded); // free if error occurs
+      return NULL;
     }
 
     uint32_t triple =
         (sextet_a << 18) | (sextet_b << 12) | (sextet_c << 6) | sextet_d;
 
+    // writing decoded bytes directly into the output
     if (j < *out_len)
       decoded[j++] = (triple >> 16) & 0xFF;
     if (j < *out_len)
