@@ -26,32 +26,51 @@ static const unsigned char base64_lookup[256] = {
     ['8'] = 60,         ['9'] = 61, ['+'] = 62, ['/'] = 63, ['='] = 0 // padding
 };
 
+static void base64_encode_triplet(uint32_t triple, char *encoded, size_t *j) {
+  const char *base64_chars_ptr = base64_chars;
+
+  encoded[(*j)++] = base64_chars_ptr[(triple >> 18) & 0x3F];
+  encoded[(*j)++] = base64_chars_ptr[(triple >> 12) & 0x3F];
+  encoded[(*j)++] = base64_chars_ptr[(triple >> 6) & 0x3F];
+  encoded[(*j)++] = base64_chars_ptr[triple & 0x3F];
+}
+
+static int base64_decode_sextets(const char *encoded, size_t *i,
+                                 uint32_t *sextet_a, uint32_t *sextet_b,
+                                 uint32_t *sextet_c, uint32_t *sextet_d) {
+  *sextet_a = base64_lookup[(unsigned char)encoded[(*i)++]];
+  *sextet_b = base64_lookup[(unsigned char)encoded[(*i)++]];
+  *sextet_c = base64_lookup[(unsigned char)encoded[(*i)++]];
+  *sextet_d = base64_lookup[(unsigned char)encoded[(*i)++]];
+
+  if ((*sextet_a | *sextet_b | *sextet_c | *sextet_d) == 0xFF) {
+    return 1; // invalid character encountered
+  }
+  return 0;
+}
+
 // encode
 char *base64_encode(const unsigned char *data, size_t len) {
-  size_t out_len = 4 * ((len + 2) / 3); // rounding up for padding
+  size_t out_len = 4 * ((len + 2) / 3);
   char *encoded = malloc(out_len + 1);
   if (!encoded)
     return NULL;
 
   size_t i, j = 0;
-  const char *base64_chars_ptr = base64_chars;
-
   for (i = 0; i < len;) {
     uint32_t octet_a = i < len ? data[i++] : 0;
     uint32_t octet_b = i < len ? data[i++] : 0;
     uint32_t octet_c = i < len ? data[i++] : 0;
     uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
 
-    // caching base64_char lookups into variables
-    char char1 = base64_chars_ptr[(triple >> 18) & 0x3F];
-    char char2 = base64_chars_ptr[(triple >> 12) & 0x3F];
-    char char3 = (i > len) ? '=' : base64_chars_ptr[(triple >> 6) & 0x3F];
-    char char4 = (i > len + 1) ? '=' : base64_chars_ptr[triple & 0x3F];
+    // encode the triplet
+    base64_encode_triplet(triple, encoded, &j);
 
-    encoded[j++] = char1;
-    encoded[j++] = char2;
-    encoded[j++] = char3;
-    encoded[j++] = char4;
+    // adjust padding if necessary
+    if (i > len)
+      encoded[j - 1] = '=';
+    if (i > len + 1)
+      encoded[j - 2] = '=';
   }
 
   encoded[out_len] = '\0'; // ensure null-termination
@@ -75,17 +94,12 @@ unsigned char *base64_decode(const char *encoded, size_t *out_len) {
     return NULL;
 
   size_t i, j = 0;
-  unsigned char *base64_lookup_ptr = (unsigned char *)base64_lookup;
-
+  uint32_t sextet_a, sextet_b, sextet_c, sextet_d;
   for (i = 0; i < len;) {
-    uint32_t sextet_a = base64_lookup_ptr[(unsigned char)encoded[i++]];
-    uint32_t sextet_b = base64_lookup_ptr[(unsigned char)encoded[i++]];
-    uint32_t sextet_c = base64_lookup_ptr[(unsigned char)encoded[i++]];
-    uint32_t sextet_d = base64_lookup_ptr[(unsigned char)encoded[i++]];
-
-    if ((sextet_a | sextet_b | sextet_c | sextet_d) == 0xFF) {
+    if (base64_decode_sextets(encoded, &i, &sextet_a, &sextet_b, &sextet_c,
+                              &sextet_d)) {
       free(decoded);
-      return NULL;
+      return NULL; // invalid character encountered
     }
 
     uint32_t triple =
