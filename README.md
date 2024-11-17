@@ -16,9 +16,9 @@ pretty well. If it doesn't, open an issue.
 The speed of bsix depends mostly on your implementation. Below is the benchmark
 for my test implementation with little to no focus on performance.
 
-| Command     |     Mean [µs] | Min [µs] | Max [µs] | Relative |
-| :---------- | ------------: | -------: | -------: | -------: |
-| `bsix-test` | 699.1 ± 143.6 |    556.3 |   6300.3 |     1.00 |
+| Command     |    Mean [µs] | Min [µs] | Max [µs] | Relative |
+| :---------- | -----------: | -------: | -------: | -------: |
+| `bsix-test` | 655.2 ± 92.7 |    543.7 |   1887.7 |     1.00 |
 
 ## Example Usage
 
